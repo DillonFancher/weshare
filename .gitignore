@@ -3,3 +3,4 @@ logs/*
 *.class
 *.cache
 .idea_modules
+.idea
