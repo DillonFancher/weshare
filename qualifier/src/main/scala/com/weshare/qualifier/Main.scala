@@ -1,12 +1,10 @@
+package com.weshare.qualifier
 
-import scala.math
 
+import com.google.common.base.Charsets
 import com.twitter.finagle.{Http, Service}
 import com.twitter.util.{Await, Future}
-import java.net.InetSocketAddress
 import org.jboss.netty.handler.codec.http._
-import com.google.common.base.Charsets
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 
 object Main {
    
