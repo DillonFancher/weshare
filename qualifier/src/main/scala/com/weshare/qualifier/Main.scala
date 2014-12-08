@@ -1,9 +1,8 @@
 package com.weshare.qualifier
 
-
 import com.google.common.base.Charsets
 import com.twitter.finagle.{Http, Service}
-import com.twitter.util.{Await, Future}
+import
 import org.jboss.netty.handler.codec.http._
 
 object Main {
