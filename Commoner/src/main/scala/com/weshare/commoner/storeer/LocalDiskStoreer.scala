@@ -11,8 +11,8 @@ import scala.util.{Success, Try}
  */
 class LocalDiskStoreer extends Storeer {
 
-  val Dir = "/tmp/weshare/commoner/storeer/local_disk_storeer"
-  val DirHandle = new File(Dir)
+  val dir = "/tmp/weshare/commoner/storeer/local_disk_storeer"
+  val DirHandle = new File(dir)
 
   // if the directory does not exist, create it
   // blow up if we dont have access to create directory
@@ -20,7 +20,7 @@ class LocalDiskStoreer extends Storeer {
 
   override def put(data: ByteBuffer): Option[LocalDiskStorerBucketKey] = {
     val filename: String = listFiles.size.toString
-    writeSmallBinaryFile(data.array, filename).toOption.map( a => LocalDiskStorerBucketKey(Dir, filename))
+    writeSmallBinaryFile(data.array, filename).toOption.map( a => LocalDiskStorerBucketKey(dir, filename))
   }
 
   /**
@@ -34,7 +34,7 @@ class LocalDiskStoreer extends Storeer {
    */
   override def get(bucket: String, key: String): Option[Array[Byte]] = readSmallBinaryFile(joinFilePath(bucket, key))
 
-  def dataDir = Dir
+  def dataDir = dir
 
   private def listFiles: Seq[String] = Option(DirHandle.listFiles()).fold(Seq.empty[String]){ fList => fList.map(_.getAbsolutePath)}
 
@@ -59,7 +59,7 @@ class LocalDiskStoreer extends Storeer {
     }
   }
 
-  def mkPathForFile(file: String): String = joinFilePath(Dir, file)
+  def mkPathForFile(file: String): String = joinFilePath(dir, file)
 
   implicit def try2Option[T](t: Try[T]): Option[T] = t.toOption
 }

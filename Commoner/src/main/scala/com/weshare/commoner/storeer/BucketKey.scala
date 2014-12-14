@@ -1,7 +1,10 @@
 package com.weshare.commoner.storeer
 
-sealed abstract class BucketKey(bucket: String, key: String)
+trait BucketKey {
+  def bucket: String
+  def key: String
+}
 
-case class LocalDiskStorerBucketKey(bucket:String, key: String) extends BucketKey(bucket, key)
+case class LocalDiskStorerBucketKey(bucket:String, key: String) extends BucketKey
 
-case class S3BucketKey(bucket: String, key: String) extends BucketKey(bucket, key)
+case class S3BucketKey(bucket: String, key: String) extends BucketKey

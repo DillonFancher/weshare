@@ -1,6 +1,6 @@
 package com.weshare.commoner.storeer
 
-import java.io.{File, InputStream, ByteArrayOutputStream}
+import java.io.{IOException, File, InputStream, ByteArrayOutputStream}
 import java.nio.ByteBuffer
 import java.nio.file.{Paths, Files}
 import org.apache.commons.io.FileUtils
@@ -42,10 +42,10 @@ class LocalDiskStoreerSpec extends Specification {
 
     def after = {
       val file = new File(storer.dataDir)
-      t
-
-      ry {
+      try {
         FileUtils.cleanDirectory(file)
+      } catch {
+        case e : IOException => println(e)
       }
     }
 
