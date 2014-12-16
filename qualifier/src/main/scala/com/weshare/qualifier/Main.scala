@@ -1,8 +1,10 @@
 package com.weshare.qualifier
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind._
 import com.google.common.base.Charsets
 import com.twitter.finagle.{Http, Service}
-import
+import com.twitter.util.{Future, Await}
 import org.jboss.netty.handler.codec.http._
 
 object Main {
@@ -10,16 +12,16 @@ object Main {
   def main(args: Array[String]) {
     val service = new Service[HttpRequest, HttpResponse] {
       def apply(request: HttpRequest): Future[HttpResponse] = { 
-	val requestBody: String = request.getContent.toString(Charsets.UTF_8)
-        
+	      val requestBody: String = request.getContent.toString(Charsets.UTF_8)
+        val requestJson: JsonNode = parseTree(requestBody)
         println("The Request Body Contained: " + request.getContent.toString(Charsets.UTF_8))
-	Future.value(new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.OK))	
+	      Future.value(new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.OK))
       }
     }
 
     val server = Http.serve(":8080", service)
     Await.ready(server)
-    //println("We are going to make this happen!")
+
     //val start: Boundary = Boundary(args(0).toDouble, args(1).toDouble)
     //val inBoundary: (Boolean, Double) = start.withinBoundary(args(2).toDouble, args(3).toDouble)
     //if(inBoundary._1) println("You should get a picture, because you are "+ inBoundary._2+ "away from LIFE!")
