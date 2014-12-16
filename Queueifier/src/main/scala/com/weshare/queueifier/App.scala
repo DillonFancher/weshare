@@ -2,29 +2,21 @@ package com.weshare.queueifier
 
 import com.twitter.finatra._
 import com.twitter.finatra.ContentType._
+import com.weshare.queueifier.controllers._
+import com.weshare.queueifier.controllers.PhotosController
 
 object App extends FinatraServer {
 
   
   class QueueifierApp extends Controller with ControllerAuthenticationService {
 
-    /**
-     * Basic Example
-     *
-     * curl http://localhost:7070/ => "hello world"
-     */
+    //------------ Actual work -----------------
+
     get("/") { implicit request =>
-      withTokenAuthentication(request){
-          request.multiParams.get("picture").map { avatar =>
-            avatar.data
-          }
-          render.plain("ok").toFuture
-      }
+     weshareNotFound.toFuture
     }
 
-    delete("/photos") { request =>
-      render.plain("deleted!").toFuture
-    }
+    //----------- End Actual work --------------
 
     /**
      * Route parameters
@@ -224,5 +216,6 @@ object App extends FinatraServer {
 
   }
 
-  register(new QueueifierApp())
+  register(new QueueifierApp)
+  register(new PhotosController)
 }
