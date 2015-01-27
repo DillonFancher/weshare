@@ -2,6 +2,7 @@ package com.weshare.core
 
 import com.twitter.finatra._
 import com.twitter.finatra.ContentType._
+import com.twitter.util.Future
 
 import scala.util.parsing.json.JSON
 
@@ -27,10 +28,10 @@ object App extends FinatraServer {
             boundaryMap <- JSON.parseRaw(boundaryStr)
             pointMap    <- JSON.parseRaw(pointStr)
           } yield {
-            boundaryMap.
+            ???
           }
 
-          render.plain(isWithInBoundary)
+          Future.value(render.plain("this is broken.")) //isWithInBoundary)
         }
       }
     }
