@@ -1,10 +1,6 @@
 name := "qualifier"
 
-version := "1.0"
-
-version := "0.0.1-SNAPSHOT"
-
-scalaVersion := "2.10.3"
+Common.settings
 
 libraryDependencies ++= Seq(
    "com.twitter" %% "finatra" % "1.5.2",

@@ -1,15 +1,10 @@
 name := "migratifier"
 
-organization := Common.org
-
-version := "0.0.1-SNAPSHOT"
-
-scalaVersion := "2.11.5"
-
-organization := Common.org
+Common.settings
 
 libraryDependencies ++= Seq(
-    "com.h2database" % "h2" % "1.3.174"
+    "com.h2database" % "h2" % "1.3.174",
+    "org.flywaydb"   % "flyway-core" % "3.1"
 )
 
 seq(flywaySettings: _*)
