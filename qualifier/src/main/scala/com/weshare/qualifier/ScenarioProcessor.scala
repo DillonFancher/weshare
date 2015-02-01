@@ -1,9 +1,13 @@
 package com.weshare.qualifier
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Charsets
 import com.twitter.util.Future
 import org.jboss.netty.handler.codec.http._
 
 class ScenarioProcessor extends DataContainers {
+
+  //Below is scenario where user is not in a session
   /**
    * General workflow:
    * 1. Create an adventure in the adventure table with the leader being the user id
@@ -13,13 +17,49 @@ class ScenarioProcessor extends DataContainers {
    * - Acceptance + Don't get previous photos => Add user_id to adventure and send link to picture that triggered invite
    * - Decline                                => Do Nothing
    */
-  def createAdventureAndInviteFriends(requestData: RequestData): Future[HttpResponse] = {
+  def createAdventureAndInviteFriends(requestData: RequestData) {
     val boundary: Boundary = Boundary(requestData.geoTag)
-    val friends: List[(String, Geo)] = findFriendsOfUser(requestData.userId)
-    val friendsInBoundary: List[String] = findFriendsInBoundary(friends, boundary)
+    val friendsInBoundary = for {
+      friend <- findFriendsOfUser(requestData.userId)
+      friendInBoundary <- boundary.withinBoundary(friend)
+    } yield friendInBoundary
+
+    println(s"Sending invitations to users: $friendsInBoundary")
     sendInvitationToJoinAdventure(friendsInBoundary, requestData.pictureUrl)
   }
 
+  def findFriendsOfUser(userId: String): List[(String, Geo)] = {
+    List(("2", (1.0, 2.0)), ("3", (3.0, 4.0)))
+  }
+
+  def sendInvitationToJoinAdventure(friendsToInvite: List[String], pictureUrl: String): Future[HttpResponse] = {
+    //send the invitation logic goes here
+    val invitationResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+    val invitationResults: List[String] = for {
+      friendToInvite <- friendsToInvite
+      result <- handleInvitationResponse(invitationResponse, friendToInvite, pictureUrl)
+    } yield result
+
+    println(s"The results of the invitations: $invitationResults")
+    Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
+  }
+
+  def handleInvitationResponse(invitationResponses: HttpResponse, friendInBoundary: String, pictureUrl: String): Option[String] = {
+      invitationResponses.getStatus.getCode match {
+        case 200 =>
+          //sendPictureUrl(friendInBoundary, pictureUrl)
+          Some(s"Invitation accepted by user: $friendInBoundary")
+        case 777 =>
+          Some(s"Invitation denied by user: $friendInBoundary")
+          //Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
+        case _ =>
+          Some(s"Failed to communicate with user: $friendInBoundary")
+         // Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE))
+      }
+  }
+
+  //Below is scenario where user is already in an adventure
+  //--------------------------------------------------------------------------------------------------------------------
 
   /**
    * This is the easy part, if the user is already in a session
@@ -40,23 +80,13 @@ class ScenarioProcessor extends DataContainers {
     List("123", "456")
   }
 
-  def findFriendsOfUser(userId: String): List[(String, Geo)] = {
-    List(("2", (1.0, 2.0)), ("3", (3.0, 4.0)))
-  }
+  //--------------------------------------------------------------------------------------------------------------------
 
-  def findFriendsInBoundary(friends: List[(String, Geo)], boundary: Boundary): List[String] = {
-    friends.flatMap(friend => boundary.withinBoundary(friend))
-  }
-
-  def sendInvitationToJoinAdventure(friendsToInvite: List[String], pictureUrl: String): Future[HttpResponse] = {
-    friendsToInvite.map(friend =>
-      println(s"Sent picture: $pictureUrl, to user: $friend")
-    )
+  //These are the common methods between the processors
+  //--------------------------------------------------------------------------------------------------------------------
+  def sendPictureUrl(userId: String, pictureUrl: String): Future[HttpResponse] = {
+    println(s"Successfully delivered picture: $pictureUrl, to user: $userId")
     Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
-  }
-
-  def sendPicture(friend: String, pictureUrl: String): Future[HttpResponse] = {
-    ???
   }
 
   def handleResponse(response: Future[HttpResponse]): Future[HttpResponse] = {
@@ -64,11 +94,12 @@ class ScenarioProcessor extends DataContainers {
       println("fuck ya")
     ).onFailure(f =>
       println("fuck no")
-      )
+    )
   }
 
-  def sendPictureUrl(userId: String, pictureUrl: String): Future[HttpResponse] = {
-    println(s"Successfully delivered picture: $pictureUrl, to user: $userId")
-    Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
+  val mapper = new ObjectMapper()
+
+  def parseRequest(request: HttpRequest) = {
+    mapper.readTree(request.getContent.toString(Charsets.UTF_8))
   }
 }

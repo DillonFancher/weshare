@@ -2,7 +2,7 @@ package com.weshare.qualifier
 
 import com.fasterxml.jackson.databind.JsonNode
 
-class DataContainers {
+trait DataContainers {
   /**
    * Put all types below
    */
