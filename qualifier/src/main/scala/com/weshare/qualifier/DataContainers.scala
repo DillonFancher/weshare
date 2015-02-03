@@ -19,10 +19,6 @@ trait DataContainers {
     val boundary: Boundary = Boundary(geoTag)
   }
 
-  /**
-   * Sample String JSON Body for picture data:
-   *'{"adventure_token":123456,"user_id":234567890,"image_url_to_S3":"https://dillon.is.awesome.com","geo":{"lat":90.01,"lon":40.2}}'
-   */
   case class Boundary(geoCoord: (Double, Double)) {
     val lat1 = math.toRadians(geoCoord._1.toDouble)
     val lon1 = math.toRadians(geoCoord._2.toDouble)

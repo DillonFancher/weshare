@@ -8,6 +8,11 @@ object Main extends ScenarioProcessor {
 
   val isUserInAdventure = false
 
+  /**
+   * Sample String JSON Body for picture data:
+   *'{"adventure_token":123456,"user_id":234567890,"image_url_to_S3":"https://dillon.is.awesome.com","geo":{"lat":90.01,"lon":40.2}}'
+   */
+
   def main(args: Array[String]) {
     val service = new Service[HttpRequest, HttpResponse] {
       def apply(request: HttpRequest): Future[HttpResponse] = {

@@ -7,7 +7,7 @@ import org.jboss.netty.handler.codec.http._
 
 class ScenarioProcessor extends DataContainers {
 
-  //Below is scenario where user is not in a session
+  //Below is scenario where user is not in an adventure
   /**
    * General workflow:
    * 1. Create an adventure in the adventure table with the leader being the user id
@@ -49,9 +49,6 @@ class ScenarioProcessor extends DataContainers {
         case 200 =>
           //sendPictureUrl(friendInBoundary, pictureUrl)
           Some(s"Invitation accepted by user: $friendInBoundary")
-        case 777 =>
-          Some(s"Invitation denied by user: $friendInBoundary")
-          //Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
         case _ =>
           Some(s"Failed to communicate with user: $friendInBoundary")
          // Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE))
@@ -60,7 +57,6 @@ class ScenarioProcessor extends DataContainers {
 
   //Below is scenario where user is already in an adventure
   //--------------------------------------------------------------------------------------------------------------------
-
   /**
    * This is the easy part, if the user is already in a session
    */
