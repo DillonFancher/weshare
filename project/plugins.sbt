@@ -1,1 +1,3 @@
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
+addSbtPlugin("org.flywaydb" % "flyway-sbt" % "3.1")
+
+resolvers += "Flyway" at "http://flywaydb.org/repo"
