@@ -5,7 +5,7 @@ import com.google.common.base.Charsets
 import com.twitter.util.Future
 import org.jboss.netty.handler.codec.http._
 
-class ScenarioProcessor extends DataContainers {
+class   ScenarioProcessor extends DataContainers {
 
   //Below is scenario where user is not in an adventure
   /**
