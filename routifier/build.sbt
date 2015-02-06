@@ -1,9 +1,4 @@
-lazy val root = (project in file(".")).
-  settings(
-    name := "routifier"
-  )
-
-version := "1.0"
+name := "routifier"
 
 version := "0.0.1-SNAPSHOT"
 

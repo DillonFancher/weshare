@@ -1,9 +1,4 @@
-lazy val root = (project in file(".")).
-  settings(
-    name := "qualifier"
-  )
-
-version := "1.0"
+name := "qualifier"
 
 version := "0.0.1-SNAPSHOT"
 
