@@ -1,13 +1,17 @@
 package com.weshare.qualifier
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Charsets
 import com.twitter.util.Future
+import com.weshare.qualifier.ScenarioConfig._
 import org.jboss.netty.handler.codec.http._
+import org.slf4j.{Logger, LoggerFactory}
 
-class   ScenarioProcessor extends DataContainers {
+class ScenarioProcessor extends DataContainers {
+  private val logger: Logger = LoggerFactory.getLogger(classOf[ScenarioProcessor])
 
+  //--------------------------------------------------------------------------------------------------------------------
   //Below is scenario where user is not in an adventure
+  //--------------------------------------------------------------------------------------------------------------------
+
   /**
    * General workflow:
    * 1. Create an adventure in the adventure table with the leader being the user id
@@ -24,47 +28,46 @@ class   ScenarioProcessor extends DataContainers {
       friendInBoundary <- boundary.withinBoundary(friend)
     } yield friendInBoundary
 
-    println(s"Sending invitations to users: $friendsInBoundary")
-    sendInvitationToJoinAdventure(friendsInBoundary, requestData.pictureUrl)
+    logger.info(s"Sending an invitation to adventure: ${requestData.adventureToken} to users: $friendsInBoundary, with initial picture: ${requestData.pictureUrl}")
+    sendInvitationsToJoinAdventure(friendsInBoundary, requestData.adventureToken, requestData.pictureUrl)
   }
 
   def findFriendsOfUser(userId: String): List[(String, Geo)] = {
     List(("2", (1.0, 2.0)), ("3", (3.0, 4.0)))
   }
 
-  def sendInvitationToJoinAdventure(friendsToInvite: List[String], pictureUrl: String): Future[HttpResponse] = {
-    //send the invitation logic goes here
-    val invitationResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
-    val invitationResults: List[String] = for {
-      friendToInvite <- friendsToInvite
-      result <- handleInvitationResponse(invitationResponse, friendToInvite, pictureUrl)
-    } yield result
-
-    println(s"The results of the invitations: $invitationResults")
-    Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
+  def sendInvitationsToJoinAdventure(friendsToInvite: List[String], adventureToken: String, pictureUrl: String) = {
+    friendsToInvite.map { friendToInvite =>
+      val routifierRequest = constructRequestJson(type_invitation, friendToInvite, pictureUrl, adventureToken)
+      logger.info(s"$routifierRequest")
+      handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_invitation, friendToInvite, pictureUrl, adventureToken)), adventureToken, friendToInvite, pictureUrl)
+    }
   }
 
-  def handleInvitationResponse(invitationResponses: HttpResponse, friendInBoundary: String, pictureUrl: String): Option[String] = {
-      invitationResponses.getStatus.getCode match {
+  def handleInvitationResponse(invitationResponse: Future[HttpResponse], adventureToken: String, friendInBoundary: String, pictureUrl: String): Future[HttpResponse] = {
+    invitationResponse.onSuccess { s =>
+      s.getStatus.getCode match {
         case 200 =>
-          //sendPictureUrl(friendInBoundary, pictureUrl)
-          Some(s"Invitation accepted by user: $friendInBoundary")
+          logger.info(s"Invitation successfully received by routifier for user: $friendInBoundary, in adventure: $adventureToken")
         case _ =>
-          Some(s"Failed to communicate with user: $friendInBoundary")
-         // Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE))
+          logger.error(s"Invitation failed: $invitationResponse \n for picture: $pictureUrl, to friend: $friendInBoundary")
       }
+    }.onFailure { f =>
+      logger.error(s"Failed to communicate with routifier, no ack on picture url.")
+    }
   }
 
+  //--------------------------------------------------------------------------------------------------------------------
   //Below is scenario where user is already in an adventure
   //--------------------------------------------------------------------------------------------------------------------
+
   /**
    * This is the easy part, if the user is already in a session
    */
-  def sendToAllInAdventure(adventureToken: String, pictureUrl: String): Future[HttpResponse] = {
-    getUsersInAdventure(adventureToken).map(userId =>
-      sendPictureUrl(userId, pictureUrl)
-    )
-    Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
+  def sendToAllInAdventure(adventureToken: String, pictureUrl: String) = {
+    getUsersInAdventure(adventureToken).map { adventurer =>
+      handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_picture_url, adventureToken, adventurer, pictureUrl)), adventureToken, adventurer, pictureUrl)
+    }
   }
 
   /**
@@ -76,26 +79,16 @@ class   ScenarioProcessor extends DataContainers {
     List("123", "456")
   }
 
-  //--------------------------------------------------------------------------------------------------------------------
-
-  //These are the common methods between the processors
-  //--------------------------------------------------------------------------------------------------------------------
-  def sendPictureUrl(userId: String, pictureUrl: String): Future[HttpResponse] = {
-    println(s"Successfully delivered picture: $pictureUrl, to user: $userId")
-    Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
-  }
-
-  def handleResponse(response: Future[HttpResponse]): Future[HttpResponse] = {
-    response.onSuccess(s =>
-      println("fuck ya")
-    ).onFailure(f =>
-      println("fuck no")
-    )
-  }
-
-  val mapper = new ObjectMapper()
-
-  def parseRequest(request: HttpRequest) = {
-    mapper.readTree(request.getContent.toString(Charsets.UTF_8))
+  def handlePictureResponse(pictureResponse: Future[HttpResponse], userId: String, pictureUrl: String, adventureToken: String) = {
+    pictureResponse.onSuccess { s =>
+      s.getStatus.getCode match {
+        case 200 =>
+          logger.info(s"Picture url sent to routifier for user: $userId")
+        case _ =>
+          logger.error(s"Sending picture url to routifier failed: $pictureResponse \n For picture: $pictureUrl, to friend: $userId, in adventure:$adventureToken")
+      }
+    }.onFailure { f =>
+      logger.error(s"Failed to communicate with routifier, no ack on picture url.")
+    }
   }
 }

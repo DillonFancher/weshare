@@ -1,8 +1,10 @@
 package com.weshare.qualifier
 
-import com.twitter.finagle.{Http, Service}
+import com.twitter.finagle.Http
+import com.twitter.finagle.Service
 import com.twitter.util.{Await, Future}
 import org.jboss.netty.handler.codec.http._
+import com.weshare.qualifier.ScenarioConfig._
 
 object Main extends ScenarioProcessor {
 
@@ -17,7 +19,6 @@ object Main extends ScenarioProcessor {
     val service = new Service[HttpRequest, HttpResponse] {
       def apply(request: HttpRequest): Future[HttpResponse] = {
         val requestData: RequestData = RequestData(parseRequest(request))
-
         //This needs to be the mysql query that checks the adventure status
         if (isUserInAdventure) {
           sendToAllInAdventure(requestData.adventureToken, requestData.pictureUrl)
@@ -33,4 +34,5 @@ object Main extends ScenarioProcessor {
     val server = Http.serve(":8080", service)
     Await.ready(server)
   }
+
 }
