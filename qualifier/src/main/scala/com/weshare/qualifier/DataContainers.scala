@@ -6,8 +6,11 @@ trait DataContainers {
   /**
    * Put all types below
    */
-  type Geo = (Double, Double)
 
+  case class LatLon(lattitude: Double, longitude: Double) {
+    val lat = lattitude
+    val lon = longitude
+  }
   /**
    * Container for picture data coming from queueifier
    */
@@ -15,17 +18,17 @@ trait DataContainers {
     val adventureToken = requestJson.get("adventure_token").toString
     val userId = requestJson.get("user_id").toString
     val pictureUrl = requestJson.get("image_url_to_S3").toString
-    val geoTag: Geo = (requestJson.get("geo").get("lat").asDouble(), requestJson.get("geo").get("lon").asDouble())
-    val boundary: Boundary = Boundary(geoTag)
+    val geoTag: LatLon = LatLon(requestJson.get("geo").get("lat").asDouble(), requestJson.get("geo").get("lon").asDouble())
+    val boundary: Boundary = Boundary(LatLon)
   }
 
-  case class Boundary(geoCoord: (Double, Double)) {
-    val lat1 = math.toRadians(geoCoord._1.toDouble)
-    val lon1 = math.toRadians(geoCoord._2.toDouble)
+  case class Boundary(geoCoord: LatLon) {
+    val lat1 = math.toRadians(geoCoord.lat)
+    val lon1 = math.toRadians(geoCoord.lon)
 
-    def withinBoundary(userIdAndGeoCoord: (String, (Double, Double))): Option[String] = {
-      val lat2 = math.toRadians(geoCoord._1)
-      val lon2 = math.toRadians(geoCoord._2)
+    def withinBoundary(userIdAndGeoCoord: (String, LatLon)): Option[String] = {
+      val lat2 = math.toRadians(geoCoord.lat)
+      val lon2 = math.toRadians(geoCoord.lon)
       val dlon = math.abs(lat1 - lat2)
       val dlat = math.abs(lon1 - lon2)
 

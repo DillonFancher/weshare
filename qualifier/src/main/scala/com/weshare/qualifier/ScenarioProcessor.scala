@@ -32,8 +32,8 @@ class ScenarioProcessor extends DataContainers {
     sendInvitationsToJoinAdventure(friendsInBoundary, requestData.adventureToken, requestData.pictureUrl)
   }
 
-  def findFriendsOfUser(userId: String): List[(String, Geo)] = {
-    List(("2", (1.0, 2.0)), ("3", (3.0, 4.0)))
+  def findFriendsOfUser(userId: String): List[(String, LatLon)] = {
+    List(("2", LatLon(1.0, 2.0)), ("3", LatLon(3.0, 4.0)))
   }
 
   def sendInvitationsToJoinAdventure(friendsToInvite: List[String], adventureToken: String, pictureUrl: String) = {
