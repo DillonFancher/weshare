@@ -27,7 +27,7 @@ trait DataContainers {
     val userId = requestJson.get("user_id").toString
     val pictureUrl = requestJson.get("image_url_to_S3").toString
     val geoTag: LatLon = LatLon(requestJson.get("geo").get("lat").asDouble(), requestJson.get("geo").get("lon").asDouble())
-    val boundary: Boundary = Boundary(LatLon)
+    val boundary: Boundary = Boundary(geoTag)
   }
 
   case class Boundary(geoCoord: LatLon) {
@@ -45,11 +45,7 @@ trait DataContainers {
       val c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
       val distance = 3961 * c
 
-      if (distance < 20) {
-        Some(Friend)
-      } else {
-        None
-      }
+      Some(friend)
     }
   }
 

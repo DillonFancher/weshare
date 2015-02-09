@@ -1,5 +1,6 @@
 package com.weshare.routifier
 
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.twitter.finagle.{Http, Service}
@@ -14,18 +15,26 @@ object Main extends RoutifierDataContainers {
   def main(args: Array[String]) {
     val service = new Service[HttpRequest, HttpResponse] {
       def apply(request: HttpRequest): Future[HttpResponse] = {
-        val requestData: QualifierRequestData = QualifierRequestData(parseRequest(request))
-        logger.info(parseRequest(request).toString)
-        logger.info(s"Got request of type: ${requestData.requestType} to user: ${requestData.userId}, in adventure: ${requestData.adventureToken}")
+        try {
+          val requestData: QualifierRequestData = QualifierRequestData(parseRequest(request))
+          logger.info(s"Got request of type: ${requestData.requestType} to user: ${requestData.userId}, in adventure: ${requestData.adventureToken}")
+        } catch {
+          case e: JsonParseException =>
+            logger.info(s"FUCK we fucked up: $e, REQUESSSSSST $request")
+            Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST))
+          case error =>
+            logger.info(s"$error")
+            Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR))
+        }
 
         Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK))
-
       }
-    }
 
+    }
     val server = Http.serve(":8090", service)
     Await.ready(server)
   }
+
   val mapper = new ObjectMapper()
 
   def parseRequest(request: HttpRequest) = {
