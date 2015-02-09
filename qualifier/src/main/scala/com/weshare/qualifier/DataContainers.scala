@@ -6,6 +6,11 @@ trait DataContainers {
   /**
    * Put all types below
    */
+  case class Friend(userId: String, latLon: LatLon, adventureStatus: Int) {
+    val this.userId = userId
+    val this.latLon = latLon
+    val this.adventureStatus = adventureStatus
+  }
 
   case class LatLon(lattitude: Double, longitude: Double) {
     val lat = lattitude
@@ -26,7 +31,7 @@ trait DataContainers {
     val lat1 = math.toRadians(geoCoord.lat)
     val lon1 = math.toRadians(geoCoord.lon)
 
-    def withinBoundary(userIdAndGeoCoord: (String, LatLon)): Option[String] = {
+    def withinBoundary(userId: String, geoCoord: LatLon): Option[String] = {
       val lat2 = math.toRadians(geoCoord.lat)
       val lon2 = math.toRadians(geoCoord.lon)
       val dlon = math.abs(lat1 - lat2)
@@ -38,10 +43,9 @@ trait DataContainers {
       val distance = 3961 * c
 
       if (distance < 20) {
-        Some(userIdAndGeoCoord._1)
+        Some(userId)
       } else {
         None
-
       }
     }
   }
