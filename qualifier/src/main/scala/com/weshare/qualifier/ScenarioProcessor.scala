@@ -25,26 +25,47 @@ class ScenarioProcessor extends DataContainers {
     val boundary: Boundary = Boundary(requestData.geoTag)
     val friendsInBoundary = for {
       friend <- lookupFriendsOfUser(requestData.userId)
-      friendInBoundary <- boundary.withinBoundary(friend.userId, friend.latLon)
-    } yield areFriendsInAdventureAlready(friendInBoundary, requestData.pictureUrl)
+      friendInBoundary <- boundary.withinBoundary(friend)
+    } yield friendInBoundary
 
-    logger.info(s"Sending an invitation to adventure: ${requestData.adventureToken} to users: $friendsInBoundary, with initial picture: ${requestData.pictureUrl}")
-    sendInvitationsToJoinAdventure(friendsInBoundary, requestData.adventureToken, requestData.pictureUrl)
+    val splitAdventurerList = whoIsInAdventureAndWhoIsNot(friendsInBoundary)
+    splitAdventurerList._2 match {
+      case Some(String) =>
+        logger.info(s"Some friends of user: ${requestData.userId}, are already in an adventure, sending photo and invitations.")
+        sendPicturesAndInvitations(splitAdventurerList._1, splitAdventurerList._2.get, requestData.pictureUrl)
+      case false =>
+        logger.info(s"Sending an invitation to adventure: ${requestData.adventureToken} to users: $friendsInBoundary, with initial picture: ${requestData.pictureUrl}")
+        sendInvitationsToJoinAdventure(friendsInBoundary, requestData.adventureToken, requestData.pictureUrl)
+    }
   }
 
-  /**
-   * This method will need to check if any of the user's friends are already in an adventure and make a ***decision*** ;)
-   * returns userId, userLocation, adventureStatus
-   */
-  def areFriendsInAdventureAlready(userId: String, pictureUrl: String): List[Friend] = {
-    lookupFriendsOfUser(userId).flatMap { friend =>
-      friend.adventureStatus match {
-        case 0 => Some(friend)
-        case 1 =>
-          sendInvitationToJoinAdventure(friend.userId, lookupCurrentAdventureToken(friend.userId), pictureUrl)
-          None
+  def sendPicturesAndInvitations(decisionList: (List[(Friend, Boolean)]), adventureToken: String , pictureUrl: String) = {
+    decisionList.map { decision =>
+      decision._1 match {
+        case true =>
+          sendToUserInAdventure(adventureToken, decision._1.userId, pictureUrl)
+        case false => sendInvitationToJoinAdventure(decision._1, adventureToken, pictureUrl)
       }
     }
+  }
+
+  def whoIsInAdventureAndWhoIsNot(friendsInBoundary: List[Friend]): (List[(Friend, Boolean)], Option[String]) = {
+    val decisionList = friendsInBoundary.flatMap { friendInBoundary =>
+      friendInBoundary.adventureStatus match {
+        case 0 => Some(friendInBoundary, false)
+        case 1 => Some(friendInBoundary, true)
+      }
+    }
+
+    val adventureToken = decisionList.map { entry =>
+      entry._2 match {
+        case false => None
+        case true => lookupCurrentAdventureToken(entry._1.userId)
+      }
+    }.toSet
+
+
+    (decisionList, adventureToken.head)
   }
 
   /**
@@ -59,20 +80,20 @@ class ScenarioProcessor extends DataContainers {
   /**
    * This will be a mysql lookup in the adventure table for the adventure the user is currently in.
    */
-  def lookupCurrentAdventureToken(userId: String): String = {
-    "1234"
+  def lookupCurrentAdventureToken(userId: String): Option[String] = {
+    Some("1234")
   }
 
-  def sendInvitationsToJoinAdventure(friendsToInvite: List[String], adventureToken: String, pictureUrl: String) = {
+  def sendInvitationsToJoinAdventure(friendsToInvite: List[Friend], adventureToken: String, pictureUrl: String) = {
     friendsToInvite.map { friendToInvite =>
       sendInvitationToJoinAdventure(friendToInvite, adventureToken, pictureUrl)
     }
   }
 
-  def sendInvitationToJoinAdventure(friendToInvite: String, adventureToken: String, pictureUrl: String) = {
-    val routifierRequest = constructRequestJson(type_invitation, friendToInvite, pictureUrl, adventureToken)
+  def sendInvitationToJoinAdventure(friendToInvite: Friend, adventureToken: String, pictureUrl: String) = {
+    val routifierRequest = constructRequestJson(type_invitation, friendToInvite.userId, pictureUrl, adventureToken)
     logger.info(s"$routifierRequest")
-    handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_invitation, friendToInvite, pictureUrl, adventureToken)), adventureToken, friendToInvite, pictureUrl)
+    handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_invitation, friendToInvite.userId, pictureUrl, adventureToken)), adventureToken, friendToInvite, pictureUrl)
   }
 
   def handleInvitationResponse(invitationResponse: Future[HttpResponse], adventureToken: String, friendInBoundary: String, pictureUrl: String): Future[HttpResponse] = {
@@ -97,8 +118,12 @@ class ScenarioProcessor extends DataContainers {
    */
   def sendToAllInAdventure(adventureToken: String, pictureUrl: String) = {
     getUsersInAdventure(adventureToken).map { adventurer =>
-      handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_picture_url, adventureToken, adventurer, pictureUrl)), adventureToken, adventurer, pictureUrl)
+      sendToUserInAdventure(adventureToken, adventurer, pictureUrl)
     }
+  }
+
+  def sendToUserInAdventure(adventureToken: String, adventurer: String, pictureUrl: String) = {
+    handleInvitationResponse(qualifierClient(buildRoutifierRequest(type_picture_url, adventureToken, adventurer, pictureUrl)), adventureToken, adventurer, pictureUrl)
   }
 
   /**
