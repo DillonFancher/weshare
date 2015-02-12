@@ -1,4 +1,4 @@
-name := "root"
+name := "WeShare"
 
 Common.settings
 
@@ -19,7 +19,7 @@ lazy val qualifier   = (project in file("qualifier")).dependsOn(commoner)
 lazy val migratifier = (project in file("migratifier")).dependsOn(commoner, servicer)
 lazy val routifier = (project in file("routifier")).dependsOn(commoner)
 
-lazy val root = (project in file(".")).aggregate(
+lazy val weshare = (project in file(".")).aggregate(
   commoner,
   servicer,
   queueifer,
