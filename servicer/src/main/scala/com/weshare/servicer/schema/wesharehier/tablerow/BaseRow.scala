@@ -7,5 +7,6 @@ trait BaseRow {
 
   val createdAtStmp: Timestamp
   def createdAt: DateTime = new DateTime(createdAtStmp)
+  val id: Int
   
 }
