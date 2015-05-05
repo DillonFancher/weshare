@@ -20,7 +20,7 @@ object Main extends RoutifierDataContainers {
           logger.info(s"Got request of type: ${requestData.requestType} to user: ${requestData.userId}, in adventure: ${requestData.adventureToken}")
         } catch {
           case e: JsonParseException =>
-            logger.info(s"FUCK we fucked up: $e, REQUESSSSSST $request")
+            logger.info(s"Unable to parse payload, error: $e, for request: $request")
             Future.value(new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST))
           case error =>
             logger.info(s"$error")
